@@ -1,129 +1,148 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>全台夜市營業狀態</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全台夜市即時營業狀態</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 flex flex-col items-center">
+<body class="bg-slate-900 text-white min-h-screen p-4 md:p-8">
+    <div class="max-w-3xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="text-center py-4 border-b border-slate-700">
+            <h1 class="text-3xl font-bold text-amber-400">🌙 全台夜市即時動態</h1>
+            <p class="text-slate-400 text-sm mt-1">氣象即時連線 × 現場民眾回報</p>
+        </header>
 
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-6">
-    <!-- 標題 -->
-    <div class="text-center">
-      <h1 class="text-2xl font-bold text-gray-800">🌙 今晚夜市開不開？</h1>
-      <p class="text-sm text-gray-500 mt-1">結合中央氣象署與現場即時回報</p>
-    </div>
-
-    <!-- 下拉選單與更新按鈕 -->
-    <div class="flex gap-2">
-      <select id="marketSelect" onchange="fetchStatus()" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl p-3 font-medium focus:ring-blue-500 focus:border-blue-500">
-        <optgroup label="臺北市 / 新北市">
-          <option value="ningxia">寧夏夜市 (台北)</option>
-          <option value="shilin">士林夜市 (台北)</option>
-          <option value="raohe">饒河街夜市 (台北)</option>
-          <option value="lehua">樂華夜市 (新北)</option>
-        </optgroup>
-        <optgroup label="臺中市 / 彰化縣">
-          <option value="fengjia" selected>逢甲夜市 (台中)</option>
-          <option value="hanxi">旱溪夜市 (台中)</option>
-          <option value="taichung_daqing">大慶夜市 (台中)</option>
-          <option value="jingcheng">精誠夜市 (彰化)</option>
-        </optgroup>
-        <optgroup label="臺南市 / 高雄市">
-          <option value="dadong">大東夜市 (台南)</option>
-          <option value="huayuan">花園夜市 (台南)</option>
-          <option value="wusheng">武聖夜市 (台南)</option>
-          <option value="ruifeng">瑞豐夜市 (高雄)</option>
-        </optgroup>
-        <optgroup label="宜蘭縣 / 花蓮縣">
-          <option value="luodong">羅東夜市 (宜蘭)</option>
-          <option value="dongdamen">東大門夜市 (花蓮)</option>
-        </optgroup>
-      </select>
-      <button onclick="fetchStatus()" class="bg-blue-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-blue-700 active:scale-95 transition">重新整理</button>
-    </div>
-
-    <!-- 狀態卡片 -->
-    <div id="statusCard" class="bg-green-500 text-white rounded-2xl p-6 text-center space-y-3 transition-all duration-300">
-      <div id="statusBadge" class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold tracking-wide">載入中...</div>
-      <h2 id="marketName" class="text-3xl font-extrabold">-- 夜市</h2>
-      <p id="statusMsg" class="text-lg font-medium opacity-90">正在取得營業狀況...</p>
-      
-      <div class="pt-4 border-t border-white/20 flex justify-around text-sm">
-        <div>
-          <span class="block text-xs opacity-75">降雨機率</span>
-          <span id="rainProb" class="text-xl font-bold">--%</span>
+        <!-- 夜市選擇下拉選單 -->
+        <div class="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+            <label for="marketSelect" class="block text-sm font-medium text-slate-300 mb-2">選擇夜市：</label>
+            <select id="marketSelect" onchange="fetchMarketData()" class="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <option value="逢甲夜市">台中 - 逢甲夜市</option>
+                <option value="一中街夜市">台中 - 一中街夜市</option>
+                <option value="旱溪夜市">台中 - 旱溪夜市</option>
+                <option value="大東夜市">台南 - 大東夜市</option>
+                <option value="花園夜市">台南 - 花園夜市</option>
+                <option value="武聖夜市">台南 - 武聖夜市</option>
+                <option value="士林夜市">台北 - 士林夜市</option>
+                <option value="饒河街夜市">台北 - 饒河街夜市</option>
+                <option value="寧夏夜市">台北 - 寧夏夜市</option>
+                <option value="樂華夜市">新北 - 樂華夜市</option>
+                <option value="文化路夜市">嘉義 - 文化路夜市</option>
+                <option value="瑞豐夜市">高雄 - 瑞豐夜市</option>
+                <option value="六合夜市">高雄 - 六合夜市</option>
+                <option value="羅東夜市">宜蘭 - 羅東夜市</option>
+            </select>
         </div>
-        <div>
-          <span class="block text-xs opacity-75">近2小時回報</span>
-          <span id="reportCount" class="text-xl font-bold">-- 筆</span>
+
+        <!-- 狀態資訊卡片 -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 id="marketName" class="text-2xl font-bold text-white">載入中...</h2>
+                <span id="openSchedule" class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full">--</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 my-4">
+                <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/50">
+                    <div class="text-slate-400 text-xs">降雨機率 (CWA)</div>
+                    <div id="rainProb" class="text-xl font-semibold text-sky-400 mt-1">-- %</div>
+                </div>
+                <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/50">
+                    <div class="text-slate-400 text-xs">現場打卡熱度</div>
+                    <div id="reportCount" class="text-xl font-semibold text-amber-400 mt-1">0 人</div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-700 pt-4">
+                <div class="text-slate-400 text-xs mb-1">綜合預測狀態</div>
+                <div id="statusBadge" class="inline-block px-3 py-1 rounded-md text-sm font-bold bg-slate-700 text-slate-300">
+                    查詢中...
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- 現場回報區域 -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+            <h3 class="text-lg font-bold text-white mb-3">📍 我在現場，回報近況</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="submitReport('Open')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 px-4 rounded-lg transition active:scale-95">
+                    🟢 熱鬧營業中
+                </button>
+                <button onclick="submitReport('Few')" class="bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 px-4 rounded-lg transition active:scale-95">
+                    🟡 攤位較少
+                </button>
+                <button onclick="submitReport('Closed')" class="bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 px-4 rounded-lg transition active:scale-95">
+                    🔴 沒開/沒攤位
+                </button>
+            </div>
+            <p id="feedbackMsg" class="text-xs text-slate-400 mt-3 text-center min-h-[1rem]"></p>
+        </div>
+
     </div>
 
-    <!-- 現場回報區塊 -->
-    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider text-center">你在現場嗎？一鍵回報狀況</p>
-      <div class="grid grid-cols-3 gap-2">
-        <button onclick="sendReport('OPEN')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 p-3 rounded-xl font-bold text-sm text-center transition active:scale-95">
-          🟢 正常擺攤
-        </button>
-        <button onclick="sendReport('FEW_STALLS')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 p-3 rounded-xl font-bold text-sm text-center transition active:scale-95">
-          🟡 攤位減少
-        </button>
-        <button onclick="sendReport('CLOSED')" class="bg-rose-100 hover:bg-rose-200 text-rose-800 p-3 rounded-xl font-bold text-sm text-center transition active:scale-95">
-          🔴 雨大沒開
-        </button>
-      </div>
-      <p id="reportSummary" class="text-xs text-center text-gray-500 pt-1">尚無近期現場回報</p>
-    </div>
-  </div>
+    <script>
+        // 指向 Render 正式環境後端
+        const API_BASE = "https://night-market-api-tntg.onrender.com";
 
-  <script>
-    const API_BASE = "http://127.0.0.1:8000";
+        async function fetchMarketData() {
+            const marketName = document.getElementById("marketSelect").value;
+            try {
+                const res = await fetch(`${API_BASE}/api/market/status?name=${encodeURIComponent(marketName)}`);
+                const data = await res.json();
 
-    async function fetchStatus() {
-      const marketId = document.getElementById("marketSelect").value;
-      try {
-        const res = await fetch(`${API_BASE}/market/${marketId}/status`);
-        const data = await res.json();
+                if (res.ok) {
+                    document.getElementById("marketName").innerText = data.market_name;
+                    document.getElementById("openSchedule").innerText = `營業日: ${data.open_schedule}`;
+                    document.getElementById("rainProb").innerText = `${data.rain_probability}%`;
+                    document.getElementById("reportCount").innerText = `${data.recent_reports_count} 人`;
 
-        document.getElementById("marketName").innerText = data.name;
-        document.getElementById("statusMsg").innerText = data.message;
-        document.getElementById("rainProb").innerText = `${data.rain_prob}%`;
-        document.getElementById("reportCount").innerText = `${data.recent_report_count || 0} 筆`;
-        document.getElementById("reportSummary").innerText = data.user_reports_summary;
+                    const badge = document.getElementById("statusBadge");
+                    badge.innerText = data.status;
 
-        const card = document.getElementById("statusCard");
-        const badge = document.getElementById("statusBadge");
-
-        if (data.status === "GREEN") {
-          card.className = "bg-emerald-500 text-white rounded-2xl p-6 text-center space-y-3 transition-all duration-300";
-          badge.innerText = "綠燈：正常營業";
-        } else if (data.status === "YELLOW") {
-          card.className = "bg-amber-500 text-white rounded-2xl p-6 text-center space-y-3 transition-all duration-300";
-          badge.innerText = "黃燈：注意天氣";
-        } else {
-          card.className = "bg-rose-500 text-white rounded-2xl p-6 text-center space-y-3 transition-all duration-300";
-          badge.innerText = "紅燈：休息 / 雨大打烊";
+                    if (data.status.includes("營業中")) {
+                        badge.className = "inline-block px-3 py-1 rounded-md text-sm font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                    } else if (data.status.includes("少")) {
+                        badge.className = "inline-block px-3 py-1 rounded-md text-sm font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+                    } else {
+                        badge.className = "inline-block px-3 py-1 rounded-md text-sm font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                    }
+                }
+            } catch (err) {
+                console.error("無法取得夜市資料:", err);
+            }
         }
-      } catch (err) {
-        alert("無法連接到 API，請確認後端 python main.py 有在執行！");
-      }
-    }
 
-    async function sendReport(status) {
-      const marketId = document.getElementById("marketSelect").value;
-      await fetch(`${API_BASE}/market/${marketId}/report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: status, note: "網頁快速打卡" })
-      });
-      fetchStatus();
-    }
+        async function submitReport(status) {
+            const marketName = document.getElementById("marketSelect").value;
+            const feedback = document.getElementById("feedbackMsg");
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/market/report`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ market_name: marketName, status: status })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    feedback.innerText = "✅ 回報成功！感謝現場提供資訊";
+                    feedback.className = "text-xs text-emerald-400 mt-3 text-center";
+                    fetchMarketData(); // 重新整理狀態
+                } else {
+                    feedback.innerText = "❌ 回報失敗，請稍後再試";
+                    feedback.className = "text-xs text-rose-400 mt-3 text-center";
+                }
+            } catch (err) {
+                feedback.innerText = "❌ 連線失敗";
+                feedback.className = "text-xs text-rose-400 mt-3 text-center";
+            }
 
-    fetchStatus();
-  </script>
+            setTimeout(() => { feedback.innerText = ""; }, 3000);
+        }
+
+        // 首次載入
+        fetchMarketData();
+    </script>
 </body>
 </html>
