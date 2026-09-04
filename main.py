@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 14 大夜市營運資訊與縣市對照表（已改為台/臺相容字串）
+# 14 大夜市營運資訊與縣市對照表
 NIGHT_MARKETS = {
     "逢甲夜市": {"city": "台中市", "schedule": "每天營業"},
     "一中街夜市": {"city": "台中市", "schedule": "每天營業"},
@@ -57,7 +57,7 @@ class ReportRequest(BaseModel):
 
 async def get_rain_probability(location_name: str) -> int:
     """呼叫中央氣象署 (CWA) 預報 API 取得最新降雨機率 ( PoP )"""
-    api_key = "CWA-8B1804E4-E5A7-466D-B07B-8B5BAA069324"
+    api_key = "CWA-729A9210-D484-4F7C-A5B5-01B0E88F2AA2"
     
     # 建立跳過 SSL 驗證的 Context
     ssl_context = ssl.create_default_context()
