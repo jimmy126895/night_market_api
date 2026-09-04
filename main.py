@@ -1,9 +1,12 @@
+import ssl
+import json
+import urllib.request
+import urllib.parse
 from datetime import date
 from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import httpx
 from typing import Dict, List
 
 app = FastAPI(title="夜市即時營業與天氣 API")
@@ -17,17 +20,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 14 大夜市營運資訊與縣市對照表
+# 14 大夜市營運資訊與縣市對照表（已改為台/臺相容字串）
 NIGHT_MARKETS = {
-    "逢甲夜市": {"city": "臺中市", "schedule": "每天營業"},
-    "一中街夜市": {"city": "臺中市", "schedule": "每天營業"},
-    "旱溪夜市": {"city": "臺中市", "schedule": "週二、四、五、六"},
-    "大東夜市": {"city": "臺南市", "schedule": "週一、二、五"},
-    "花園夜市": {"city": "臺南市", "schedule": "週四、六、日"},
-    "武聖夜市": {"city": "臺南市", "schedule": "週三、五、六"},
-    "士林夜市": {"city": "臺北市", "schedule": "每天營業"},
-    "饒河街夜市": {"city": "臺北市", "schedule": "每天營業"},
-    "寧夏夜市": {"city": "臺北市", "schedule": "每天營業"},
+    "逢甲夜市": {"city": "台中市", "schedule": "每天營業"},
+    "一中街夜市": {"city": "台中市", "schedule": "每天營業"},
+    "旱溪夜市": {"city": "台中市", "schedule": "週二、四、五、六"},
+    "大東夜市": {"city": "台南市", "schedule": "週一、二、五"},
+    "花園夜市": {"city": "台南市", "schedule": "週四、六、日"},
+    "武聖夜市": {"city": "台南市", "schedule": "週三、五、六"},
+    "士林夜市": {"city": "台北市", "schedule": "每天營業"},
+    "饒河街夜市": {"city": "台北市", "schedule": "每天營業"},
+    "寧夏夜市": {"city": "台北市", "schedule": "每天營業"},
     "樂華夜市": {"city": "新北市", "schedule": "每天營業"},
     "文化路夜市": {"city": "嘉義市", "schedule": "每天營業"},
     "瑞豐夜市": {"city": "高雄市", "schedule": "週二、四、五、六、日"},
@@ -54,27 +57,38 @@ class ReportRequest(BaseModel):
 
 async def get_rain_probability(location_name: str) -> int:
     """呼叫中央氣象署 (CWA) 預報 API 取得最新降雨機率 ( PoP )"""
-    cwa_url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001"
-    params = {
-        "Authorization": "CWA-8B1804E4-E5A7-466D-B07B-8B5BAA069324",
-        "locationName": location_name
-    }
+    api_key = "CWA-8B1804E4-E5A7-466D-B07B-8B5BAA069324"
     
-    # 加上 verify=False 跳過政府憑證驗證問題
-    async with httpx.AsyncClient(verify=False) as client:
+    # 建立跳過 SSL 驗證的 Context
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    # 同時嘗試 "台中市" 與 "臺中市" 兩種可能寫法
+    targets = [location_name, location_name.replace("台", "臺")]
+    
+    for target in targets:
+        encoded_location = urllib.parse.quote(target)
+        cwa_url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={api_key}&locationName={encoded_location}"
+        
         try:
-            response = await client.get(cwa_url, params=params, timeout=5.0)
-            if response.status_code == 200:
-                data = response.json()
-                locations = data.get("records", {}).get("location", [])
-                if locations:
-                    weather_elements = locations[0].get("weatherElement", [])
-                    for element in weather_elements:
-                        if element.get("elementName") == "PoP":
-                            pop_value = element["time"][0]["parameter"]["parameterName"]
-                            return int(pop_value)
+            req = urllib.request.Request(cwa_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, context=ssl_context, timeout=5.0) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode('utf-8'))
+                    records = data.get("records", {})
+                    locations = records.get("location", [])
+                    
+                    if locations:
+                        weather_elements = locations[0].get("weatherElement", [])
+                        for element in weather_elements:
+                            if element.get("elementName") == "PoP":
+                                time_slots = element.get("time", [])
+                                if time_slots:
+                                    pop_value = time_slots[0]["parameter"]["parameterName"]
+                                    return int(pop_value)
         except Exception as e:
-            print(f"氣象 API 擷取失敗: {e}")
+            print(f"嘗試抓取 [{target}] 氣象失敗: {e}")
             
     return 0
 
