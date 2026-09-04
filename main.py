@@ -60,18 +60,17 @@ async def get_rain_probability(location_name: str) -> int:
         "locationName": location_name
     }
     
-    async with httpx.AsyncClient() as client:
+    # 加上 verify=False 跳過政府憑證驗證問題
+    async with httpx.AsyncClient(verify=False) as client:
         try:
             response = await client.get(cwa_url, params=params, timeout=5.0)
             if response.status_code == 200:
                 data = response.json()
-                # 修正解析路徑：records -> location
                 locations = data.get("records", {}).get("location", [])
                 if locations:
                     weather_elements = locations[0].get("weatherElement", [])
                     for element in weather_elements:
                         if element.get("elementName") == "PoP":
-                            # 取得當前時段降雨機率
                             pop_value = element["time"][0]["parameter"]["parameterName"]
                             return int(pop_value)
         except Exception as e:
